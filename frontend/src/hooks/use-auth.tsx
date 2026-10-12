@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { supabase } from "@/lib/supabase";
 import type { User } from "@/types/database";
 import { getUserFriendlyError } from "@/lib/error-handler";
+import { isAdminEmail } from "@/lib/constants";
 
 interface AuthContextType {
   user: User | null;
@@ -15,18 +16,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const ADMIN_EMAILS = ["funfinityacademy@gmail.com", "academyfunfinity@gmail.com"];
-
-const isAdminUser = (email: string) => {
-  if (!email) return false;
-  const normalizedEmail = email.toLowerCase().trim();
-  return ADMIN_EMAILS.includes(normalizedEmail);
-};
-
 const fetchUserRole = async (userId: string, email?: string) => {
   // Direct admin check for whitelisted emails
-  if (email && isAdminUser(email)) {
-    console.log('Admin email detected, returning admin role');
+  if (email && isAdminEmail(email)) {
     return "admin";
   }
 
@@ -37,13 +29,10 @@ const fetchUserRole = async (userId: string, email?: string) => {
       .eq('id', userId)
       .single();
 
-    console.log('fetchUserRole result:', { profile, error });
-
     if (error) {
-      console.warn('Profile query error:', error);
-      // If profile doesn't exist, create it
+      // If profile doesn't exist, default to student
       if (error.code === 'PGRST116') {
-        console.log('Profile not found, will create on sign-in');
+        return "student";
       }
       return "student";
     }
@@ -54,7 +43,6 @@ const fetchUserRole = async (userId: string, email?: string) => {
 
     return "student";
   } catch (error) {
-    console.error('fetchUserRole error:', error);
     return "student";
   }
 };
@@ -115,18 +103,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadCurrentUser = async (authUser: any) => {
     try {
-      console.log('loadCurrentUser called for:', authUser.id);
-      const isAdmin = isAdminUser(authUser.email);
-      const adminRole = isAdmin ? 'admin' : 'student';
+      // Fetch role from profile first, admin email as fallback
+      const userRole = await fetchUserRole(authUser.id, authUser.email);
       
-      // Set user immediately without waiting for profile
+      // Set user immediately
       setUser({
         id: authUser.id,
         email: authUser.email,
         display_name: authUser.user_metadata.display_name || authUser.email?.split('@')[0],
-        role: adminRole
+        role: userRole
       } as User);
-      setRole(adminRole);
+      setRole(userRole);
       
       // Try to load profile in background (don't block)
       (async () => {
@@ -138,48 +125,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .single();
           
           if (profileError || !profile) {
-            console.log('Profile not found, creating in background');
+            // Create profile if it doesn't exist
             await supabase
               .from('profiles')
               .insert({
                 id: authUser.id,
                 email: authUser.email,
                 display_name: authUser.user_metadata.display_name || authUser.email?.split('@')[0],
-                role: adminRole
+                role: userRole
               });
-          } else if (isAdmin && profile.role !== 'admin') {
-            console.log('Updating profile role to admin');
+          } else if (isAdminEmail(authUser.email) && profile.role !== 'admin') {
+            // Sync admin email to admin role in profile
             await supabase
               .from('profiles')
               .update({ role: 'admin' })
               .eq('id', authUser.id);
           }
         } catch (err) {
-          console.warn('Profile load/update failed:', err);
+          // Profile operations are non-blocking
         }
       })();
     } catch (error) {
-      console.error('loadCurrentUser error:', error);
       if (authUser) {
-        const isAdmin = isAdminUser(authUser.email);
+        const fallbackRole = isAdminEmail(authUser.email) ? 'admin' : 'student';
         setUser({
           id: authUser.id,
           email: authUser.email,
           display_name: authUser.user_metadata.display_name || authUser.email?.split('@')[0],
-          role: isAdmin ? 'admin' : 'student'
+          role: fallbackRole
         } as User);
-        setRole(isAdmin ? 'admin' : 'student');
+        setRole(fallbackRole);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const signUp = async (email: string, password: string, name: string, userRole: string) => {
+  const signUp = async (email: string, password: string, name: string, requestedRole: string) => {
     try {
-      console.log('Attempting sign up with:', email);
-      const isAdmin = isAdminUser(email);
-      const finalRole = isAdmin ? 'admin' : 'student';
+      // Determine final role: admin email gets admin, otherwise respect requested role or default to student
+      const isAdmin = isAdminEmail(email);
+      const finalRole = isAdmin ? 'admin' : (requestedRole || 'student');
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -193,13 +179,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        console.error('Sign up error:', error);
         throw error;
       }
 
       if (data.user) {
-        console.log('Sign up successful for user:', data.user.id, 'with role:', finalRole);
-        
         // Set user immediately
         setUser({
           id: data.user.id,
@@ -221,14 +204,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 role: finalRole
               });
           } catch (err) {
-            console.warn('Profile creation failed:', err);
+            // Profile creation is non-blocking
           }
         })();
       }
 
       return { error: null };
     } catch (error: any) {
-      console.error('Sign up failed:', error);
       const userError = getUserFriendlyError(error);
       return { error: { message: userError.message } };
     }
@@ -236,24 +218,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      console.log('Attempting sign in with:', email);
-      const isAdmin = isAdminUser(email);
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
       if (error) {
-        console.error('Sign in error:', error);
         throw error;
       }
 
       if (data.user) {
-        console.log('Sign in successful for user:', data.user.id);
-        
-        // For admin emails, force admin role
-        const role = isAdmin ? 'admin' : 'student';
+        // Fetch role from profile, admin email as fallback
+        const role = await fetchUserRole(data.user.id, data.user.email);
         
         // Set user immediately without waiting for profile
         setUser({
@@ -275,7 +251,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               .single();
             
             if (profileError || !existingProfile) {
-              console.log('Creating profile in background with role:', role);
               await supabase
                 .from('profiles')
                 .insert({
@@ -284,22 +259,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   display_name: data.user.user_metadata.display_name || data.user.email?.split('@')[0],
                   role: role
                 });
-            } else if (isAdmin && existingProfile.role !== 'admin') {
-              console.log('Updating profile role to admin');
+            } else if (isAdminEmail(data.user.email) && existingProfile.role !== 'admin') {
               await supabase
                 .from('profiles')
                 .update({ role: 'admin' })
                 .eq('id', data.user.id);
             }
           } catch (err) {
-            console.warn('Profile check/update failed:', err);
+            // Profile operations are non-blocking
           }
         })();
       }
 
       return { error: null };
     } catch (error: any) {
-      console.error('Sign in failed:', error);
       const userError = getUserFriendlyError(error);
       return { error: { message: userError.message } };
     }

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import {
   Award,
   BarChart3,
@@ -327,7 +328,9 @@ export function AppLayout() {
 
         <main id="main-content" className="flex-1 overflow-hidden p-3 sm:p-4 lg:p-6" role="main" tabIndex={-1}>
           <div className="h-full overflow-y-auto">
-            <Outlet />
+            <ErrorBoundary componentName="App Content">
+              <Outlet />
+            </ErrorBoundary>
           </div>
         </main>
 

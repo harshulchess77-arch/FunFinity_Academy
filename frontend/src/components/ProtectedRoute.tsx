@@ -1,9 +1,11 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2, AlertTriangle, Shield } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { useMaintenance } from "@/hooks/use-maintenance";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { SkeletonLoader } from "@/components/ui/skeleton-loader";
+import { isAdminEmail } from "@/lib/constants";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -11,17 +13,10 @@ interface ProtectedRouteProps {
   requireOnboarding?: boolean;
 }
 
-const ADMIN_EMAILS = ["funfinityacademy@gmail.com", "academyfunfinity@gmail.com"];
-
-const isAdminEmail = (email: string) => {
-  if (!email) return false;
-  const normalizedEmail = email.toLowerCase().trim();
-  return ADMIN_EMAILS.includes(normalizedEmail);
-};
-
 export function ProtectedRoute({ children, allowedRoles, requireOnboarding = false }: ProtectedRouteProps) {
   const { user, role, loading } = useAuth();
   const { isMaintenanceActive } = useMaintenance();
+  const location = useLocation();
 
   // Check onboarding status for student role
   const { data: onboardingStatus, isLoading: checkingOnboarding } = useQuery({
@@ -49,7 +44,6 @@ export function ProtectedRoute({ children, allowedRoles, requireOnboarding = fal
         } catch (error) {
           // If academic_profiles table doesn't exist or has permission issues, 
           // don't block the user - just mark as complete for onboarding purposes
-          console.log('Academic profile check failed, treating as complete:', error);
           academic_complete = true;
         }
         
@@ -58,7 +52,6 @@ export function ProtectedRoute({ children, allowedRoles, requireOnboarding = fal
           academic_complete
         };
       } catch (error) {
-        console.log('Onboarding status check failed, allowing access:', error);
         // If profile check fails, allow access to prevent blocking
         return { dna_complete: true, academic_complete: true };
       }
@@ -67,21 +60,12 @@ export function ProtectedRoute({ children, allowedRoles, requireOnboarding = fal
     refetchOnWindowFocus: false
   });
 
-  console.log('ProtectedRoute state v2:', { loading, user: !!user, role, allowedRoles: JSON.stringify(allowedRoles), userObj: user, onboardingStatus });
-
+  // Loading state - show branded skeleton
   if (loading || (requireOnboarding && role === 'student' && checkingOnboarding)) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6 text-center gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="text-lg font-medium text-foreground">
-          Ecosystem is building up right now please cooperate.
-        </p>
-      </div>
-    );
+    return <SkeletonLoader type="page" />;
   }
 
   if (!user) {
-    console.log('ProtectedRoute: No user, redirecting to /auth');
     return <Navigate to="/auth" replace />;
   }
 
@@ -91,8 +75,10 @@ export function ProtectedRoute({ children, allowedRoles, requireOnboarding = fal
     
     // If onboarding not complete, redirect to welcome gateway
     if (!dna_complete || !academic_complete) {
-      console.log('ProtectedRoute: Onboarding incomplete, redirecting to welcome gateway');
-      return <Navigate to="/app/welcome-gateway" replace />;
+      // Don't redirect if already on welcome gateway to prevent loop
+      if (location.pathname !== '/app/welcome-gateway') {
+        return <Navigate to="/app/welcome-gateway" replace />;
+      }
     }
   }
 
@@ -113,21 +99,24 @@ export function ProtectedRoute({ children, allowedRoles, requireOnboarding = fal
     );
   }
 
+  // Role-based access control
   if (allowedRoles && role && !allowedRoles.includes(role.toLowerCase())) {
-    console.log('ProtectedRoute: Role check failed', { role, allowedRoles });
-    const pathMap: Record<string, string> = { student: "/app", admin: "/admin" };
-    return <Navigate to={pathMap[role.toLowerCase()] || "/app"} replace />;
+    const pathMap: Record<string, string> = { 
+      student: "/app", 
+      admin: "/admin",
+      parent: "/parent",
+      teacher: "/teacher"
+    };
+    const targetPath = pathMap[role.toLowerCase()] || "/app";
+    
+    // Loop guard: don't redirect to the same path
+    if (location.pathname !== targetPath) {
+      return <Navigate to={targetPath} replace />;
+    }
   }
 
   // Strict admin email enforcement
   if (role === "admin" && user?.email && !isAdminEmail(user.email)) {
-    console.log('ProtectedRoute: Non-admin email attempting admin access', { email: user.email });
-    return <Navigate to="/app" replace />;
-  }
-
-  // Ensure all standard users route to student dashboard
-  if (role !== "admin" && allowedRoles?.includes("admin")) {
-    console.log('ProtectedRoute: Non-admin attempting admin route', { role });
     return <Navigate to="/app" replace />;
   }
 

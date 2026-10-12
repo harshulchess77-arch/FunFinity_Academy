@@ -13,6 +13,7 @@ import { LearningDNAProvider } from "@/hooks/use-learning-dna";
 import { StudentPreferencesProvider } from "@/hooks/use-student-preferences";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { SkeletonLoader } from "@/components/ui/skeleton-loader";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Suspense, useEffect, useState, lazy } from "react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
@@ -190,8 +191,9 @@ const App = () => {
                           <InitConsentScripts />
                           <ScrollRestoration />
                           <Suspense fallback={<RouteSkeleton />}>
-                            <div className="min-h-screen flex flex-col" role="application">
-                              <Routes>
+                            <ErrorBoundary componentName="App Router">
+                              <div className="min-h-screen flex flex-col" role="application">
+                                <Routes>
                                 <Route path="/" element={<Index />} />
                                 <Route path="/auth" element={<Auth />} />
                                 <Route path="/reset-password" element={<ResetPassword />} />
@@ -215,7 +217,7 @@ const App = () => {
                               <Route path="/app/security-hold" element={<ProtectedRoute allowedRoles={['student', 'admin']} requireOnboarding={false}><SecurityHold /></ProtectedRoute>} />
 
                               {/* Student Platform - Main App (with onboarding check) */}
-                              <Route path="/app" element={<ProtectedRoute allowedRoles={['student', 'admin']}><AppLayout /></ProtectedRoute>}>
+                              <Route path="/app" element={<ProtectedRoute allowedRoles={['student', 'admin']} requireOnboarding={true}><AppLayout /></ProtectedRoute>}>
                                 <Route index element={<Dashboard />} />
                                 <Route path="courses" element={<Courses />} />
                                 <Route path="courses/:id" element={<CourseDetail />} />
@@ -290,7 +292,8 @@ const App = () => {
 
                               <Route path="*" element={<NotFound />} />
                             </Routes>
-                        </div>
+                              </div>
+                            </ErrorBoundary>
                           </Suspense>
                       </StudentPreferencesProvider>
                     </LearningDNAProvider>

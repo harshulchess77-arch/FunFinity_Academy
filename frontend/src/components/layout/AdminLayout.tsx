@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import {
   LayoutDashboard, Users, BookOpen, BarChart3, Settings, Menu, Shield, Megaphone, FileText, Globe,
   Activity, HelpCircle, Search, ChevronRight, Sun, Moon, LogOut, Ban,
@@ -257,7 +258,9 @@ export function AdminLayout() {
           </div>
         </header>
         <main id="main-content" className="flex-1 overflow-auto p-4 lg:p-6" role="main" tabIndex={-1}>
-          <Outlet />
+          <ErrorBoundary componentName="Admin Content">
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>
