@@ -13,7 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { apiClient } from "@/lib/api-client";
-import { AcademicProfileSkeleton } from "@/components/skeletons/AcademicProfileSkeleton";
+import { SkeletonLoader } from "@/components/ui/skeleton-loader";
 import { z } from "zod";
 
 // Zod validation schemas for XSS prevention and data integrity
@@ -326,7 +326,7 @@ export default function AcademicProfile() {
   const gpaData = calculateGPA();
 
   if (loading) {
-    return <AcademicProfileSkeleton />;
+    return <SkeletonLoader type="page" />;
   }
 
   return (

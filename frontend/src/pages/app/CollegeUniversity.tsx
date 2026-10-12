@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
-import { CollegeExplorerSkeleton } from "@/components/skeletons/CollegeExplorerSkeleton";
+import { SkeletonLoader } from "@/components/ui/skeleton-loader";
 
 interface College {
   id: string;
@@ -430,7 +430,7 @@ export default function CollegeUniversity() {
   }, [search, typeFilter, locationFilter, countryFilter, rankingFilter, tuitionFilter, acceptanceRateFilter, programFilter, gpaFilter, satFilter, actFilter, sortBy, academicProfile]);
 
   if (profileLoading && user) {
-    return <CollegeExplorerSkeleton />;
+    return <SkeletonLoader type="card" count={6} />;
   }
 
   const getMatchColor = (score: number) => {

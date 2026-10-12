@@ -10,7 +10,7 @@ import {
 import { FunfinityIcon } from "@/components/brand/FunfinityLogo";
 import { Button } from "@/components/ui/button";
 import { SkeletonLoader } from "@/components/ui/skeleton-loader";
-import { AdminUsersSkeleton } from "@/components/skeletons/AdminUsersSkeleton";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -384,7 +384,7 @@ export default function AdminUsers() {
   };
 
   if (isLoading) {
-    return <AdminUsersSkeleton />;
+    return <SkeletonLoader type="table" />;
   }
 
   return (

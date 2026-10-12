@@ -11,7 +11,6 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonLoader } from "@/components/ui/skeleton-loader";
 import { DashboardCharts } from "@/components/charts/DashboardCharts";
-import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { DeadlineTracker } from "@/components/widgets/DeadlineTracker";
 import { useState, useMemo, memo } from "react";
 import { useAuth } from "@/hooks/use-auth";
@@ -119,7 +118,7 @@ export default function Dashboard() {
   return (
     <div className="max-w-7xl mx-auto w-full space-y-4 sm:space-y-6">
       {isLoading ? (
-        <DashboardSkeleton />
+        <SkeletonLoader type="dashboard" />
       ) : (
         <>
       <AnimatePresence>

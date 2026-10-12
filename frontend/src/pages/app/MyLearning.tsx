@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { useEnrollments } from "@/hooks/use-courses";
 import { cn } from "@/lib/utils";
-import { MyLearningSkeleton } from "@/components/skeletons/MyLearningSkeleton";
+import { SkeletonLoader } from "@/components/ui/skeleton-loader";
 
 export default function MyLearning() {
   const { data: enrollments, isLoading } = useEnrollments();
@@ -30,7 +30,7 @@ export default function MyLearning() {
       </motion.div>
 
       {isLoading ? (
-        <MyLearningSkeleton />
+        <SkeletonLoader type="list" count={5} />
       ) : (enrollments || []).length === 0 ? (
         <div className="platform-card p-12 text-center">
           <BookOpen className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />

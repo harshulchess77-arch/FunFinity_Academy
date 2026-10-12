@@ -11,7 +11,7 @@ import { FirstTimeTour } from "@/components/onboarding/FirstTimeTour";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/lib/supabase";
-import { DNASkeleton } from "@/components/skeletons/DNASkeleton";
+import { SkeletonLoader } from "@/components/ui/skeleton-loader";
 
 // Stable Unsplash images — always visible on any network
 const IMG = {
@@ -508,7 +508,7 @@ export default function LearningDNAQuestionnaire() {
   }
 
   if (isProfileLoading) {
-    return <DNASkeleton />;
+    return <SkeletonLoader type="page" />;
   }
 
   const strategies = generateRecommendations(draft as any);
