@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { log, error } from './logger';
 
 /**
  * Resilient environment variable loading with sanitization
@@ -123,7 +124,7 @@ export const checkSupabaseConnection = async (
         connectionStatus = 'disconnected';
         return false;
       }
-      console.log('✓ Supabase connection verified');
+      log('✓ Supabase connection verified');
       connectionStatus = 'connected';
       return true;
     } catch (error) {

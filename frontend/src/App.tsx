@@ -116,7 +116,15 @@ const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications")
 // Parent Portal pages
 const ParentDashboard = lazy(() => import("./pages/parent/ParentDashboard"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Scroll position restoration component
 function ScrollRestoration() {

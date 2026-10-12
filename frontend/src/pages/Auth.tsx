@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { FeatureSlideshow } from "@/components/auth/FeatureSlideshow";
 import { SkeletonLoader } from "@/components/ui/skeleton-loader";
+import { log } from "@/lib/logger";
 import { supabase } from "@/lib/supabase";
 import { useGamification } from "@/hooks/use-gamification";
 import { SupportChatWidget } from "@/components/chat/SupportChatWidget";
@@ -111,7 +112,7 @@ export default function Auth() {
 
   useEffect(() => {
     if (user && userRole) {
-      console.log('Auth: User logged in with role:', userRole, 'Email:', user.email);
+      log('Auth: User logged in with role:', userRole, 'Email:', user.email);
 
       // STRICT ROLE-BASED ROUTING
       // Admin emails: funfinityacademy@gmail.com, academyfunfinity@gmail.com → Admin Ecosystem
@@ -120,7 +121,7 @@ export default function Auth() {
       const isAdmin = adminEmails.includes(user.email?.toLowerCase().trim() || '');
 
       if (isAdmin) {
-        console.log('Auth: Admin user detected, redirecting to /admin');
+        log('Auth: Admin user detected, redirecting to /admin');
         navigate("/admin");
         return;
       }
