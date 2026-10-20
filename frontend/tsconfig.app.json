@@ -22,7 +22,7 @@
     "noFallthroughCasesInSwitch": false,
     "paths": {
       "@/*": [
-        "./frontend/src/*"
+        "./src/*"
       ]
     },
     "allowSyntheticDefaultImports": true,
@@ -30,6 +30,6 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": [
-    "frontend/src"
+    "src"
   ]
 }

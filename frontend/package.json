@@ -4,29 +4,16 @@
   "description": "Autonomous Agentic Ecosystem - Silicon Valley Level Educational Platform",
   "private": true,
   "type": "module",
-  "main": "index.js",
   "scripts": {
     "dev": "vite --port 8080 --host",
-    "build": "tsc && vite build",
-    "build:dev": "vite build --mode development",
+    "build": "npm run typecheck && vite build",
     "preview": "vite preview",
-    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint src --ext ts,tsx --fix",
-    "type-check": "tsc --noEmit",
-    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,css,md,json}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,css,md,json}\"",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage",
-    "clean": "rimraf dist",
-    "analyze": "npm run build && npx vite-bundle-analyzer dist/stats.html",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build",
-    "cf:dev": "wrangler dev",
-    "cf:deploy": "wrangler deploy",
-    "d1:create": "wrangler d1 create funfinity-db",
-    "d1:execute": "wrangler d1 execute funfinity-db --local --file=./schema.sql"
+    "clean": "rimraf dist"
   },
   "keywords": [
     "education",
@@ -175,22 +162,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE",
-    "package.json"
-  ],
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./styles": "./dist/styles.css"
-  },
-  "sideEffects": [
-    "**/*.css"
-  ]
+  }
 }
